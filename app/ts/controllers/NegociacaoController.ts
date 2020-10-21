@@ -1,25 +1,26 @@
 
-import { logarTempoDeExecucao } from '../helpers/decorators/index';
-import { Negociacao, Negociacoes } from '../models/index';
-import { NegociacoesView, MensagemView } from '../views/index';
-
+import { domInject, throttle } from '../helpers/decorators/index';
+import { Negociacao, Negociacoes, NegociacaoParcial } from '../models/index';
+import { MensagemView, NegociacoesView } from '../views/index';
 export class NegociacaoController {
 
+    @domInject('#data')
     private _inputData: JQuery;
+
+    @domInject('#quantidade')
     private _inputQuantidade: JQuery;
+
+    @domInject('#valor')
     private _inputValor: JQuery;
+
     private _negociacoes: Negociacoes = new Negociacoes();
     private _negociacoesView = new NegociacoesView('#negociacoesView', true);
     private _mensagemView = new MensagemView('#mensagemView', true);
 
     constructor() {
-        this._inputData = $('#data');
-        this._inputQuantidade = $('#quantidade');
-        this._inputValor = $('#valor');
         this._negociacoesView.update(this._negociacoes);
     }
 
-    @logarTempoDeExecucao()
     adiciona(event: Event) {
         event.preventDefault();
         let data = new Date(this._inputData.val().replace(/-/g, ','));
@@ -38,6 +39,27 @@ export class NegociacaoController {
 
     private _ehDiaUtil(data: Date) {
         return data.getDay() != DiaDaSemana.Sabado && data.getDay() != DiaDaSemana.Domingo;
+    }
+
+    @throttle()
+    importaDados() {
+        function isOk(res: Response) {
+            if (res.ok) {
+                return res;
+            } else {
+                throw new Error(res.statusText);
+            }
+        };
+        fetch('http://localhost:8080/dados')
+            .then(res => isOk(res))
+            .then(res => res.json())
+            .then((dados: NegociacaoParcial[]) => {
+                dados
+                    .map(dado => new Negociacao(new Date(), dado.vezes, dado.montante))
+                    .forEach(negociacao => this._negociacoes.adiciona(negociacao));
+                this._negociacoesView.update(this._negociacoes);
+            })
+            .catch(err => console.log(err.message));
     }
 
 }
