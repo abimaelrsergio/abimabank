@@ -1,7 +1,8 @@
-
 import { domInject, throttle } from '../helpers/decorators/index';
-import { Negociacao, Negociacoes, NegociacaoParcial } from '../models/index';
+import { Negociacao, Negociacoes } from '../models/index';
 import { MensagemView, NegociacoesView } from '../views/index';
+import { NegociacaoService, HandlerFunction } from './../service/NegociacaoService';
+
 export class NegociacaoController {
 
     @domInject('#data')
@@ -17,12 +18,14 @@ export class NegociacaoController {
     private _negociacoesView = new NegociacoesView('#negociacoesView', true);
     private _mensagemView = new MensagemView('#mensagemView', true);
 
+    private _service = new NegociacaoService();
+
     constructor() {
         this._negociacoesView.update(this._negociacoes);
     }
 
-    adiciona(event: Event) {
-        event.preventDefault();
+    @throttle()
+    adiciona() {
         let data = new Date(this._inputData.val().replace(/-/g, ','));
         if (!this._ehDiaUtil(data)) {
             this._mensagemView.update('Somente negociações em dias úteis, por favor');
@@ -43,23 +46,18 @@ export class NegociacaoController {
 
     @throttle()
     importaDados() {
-        function isOk(res: Response) {
+        this._service.obterNegociacoes((res: Response) => {
             if (res.ok) {
                 return res;
             } else {
                 throw new Error(res.statusText);
             }
-        };
-        fetch('http://localhost:8080/dados')
-            .then(res => isOk(res))
-            .then(res => res.json())
-            .then((dados: NegociacaoParcial[]) => {
-                dados
-                    .map(dado => new Negociacao(new Date(), dado.vezes, dado.montante))
-                    .forEach(negociacao => this._negociacoes.adiciona(negociacao));
+        })
+            .then(negociacoes => {
+                negociacoes.forEach(negociacao =>
+                    this._negociacoes.adiciona(negociacao));
                 this._negociacoesView.update(this._negociacoes);
-            })
-            .catch(err => console.log(err.message));
+            });
     }
 
 }
