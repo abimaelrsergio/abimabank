@@ -1,4 +1,5 @@
 
+import { logarTempoDeExecucao } from '../helpers/decorators/index';
 import { Negociacao, Negociacoes } from '../models/index';
 import { NegociacoesView, MensagemView } from '../views/index';
 
@@ -18,6 +19,7 @@ export class NegociacaoController {
         this._negociacoesView.update(this._negociacoes);
     }
 
+    @logarTempoDeExecucao()
     adiciona(event: Event) {
         event.preventDefault();
         let data = new Date(this._inputData.val().replace(/-/g, ','));
