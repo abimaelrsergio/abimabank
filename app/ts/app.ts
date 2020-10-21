@@ -1,5 +1,5 @@
-const controller = new NegociacaoController();
+import { NegociacaoController } from './controllers/NegociacaoController';
 
-document
-    .querySelector('.form')
-    .addEventListener('submit', controller.adiciona.bind(controller));
+const controller = new NegociacaoController();
+// usando JQuery! 
+$('.form').submit(controller.adiciona.bind(controller));
