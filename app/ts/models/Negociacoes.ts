@@ -1,3 +1,4 @@
+import { logarTempoDeExecucao } from '../helpers/decorators/index';
 import { Negociacao } from './Negociacao';
 
 export class Negociacoes {
